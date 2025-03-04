@@ -8,8 +8,6 @@ let model: GLModel;
 
 let reticleSceneObj: GLSceneObject; // keep the reference to change the transform
 let arHitTestSource: XRHitTestSource | undefined;
-let hitLocationPosition: vec3 | null = null;
-let hitLocationOrientation: quat | null = null;
 
 const options : XRSessionInit = {
     requiredFeatures: ['unbounded', 'hit-test'] // also request hit-test feature
@@ -155,8 +153,8 @@ function onDrawFrame(t: DOMHighResTimeStamp, frame: XRFrame) {
                     let rotZ = hitResultPose.transform.orientation.z;
                     let rotW = hitResultPose.transform.orientation.w;
         
-                    hitLocationPosition = vec3.fromValues(posX, posY, posZ);
-                    hitLocationOrientation = quat.fromValues(rotX, rotY, rotZ, rotW);
+                    const hitLocationPosition = vec3.fromValues(posX, posY, posZ);
+                    const hitLocationOrientation = quat.fromValues(rotX, rotY, rotZ, rotW);
     
                     reticleSceneObj.setPosition(hitLocationPosition);
                     reticleSceneObj.setRotation(hitLocationOrientation);
