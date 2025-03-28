@@ -1,0 +1,25 @@
+{
+  "name": "webar-depth-sensing-intro",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/three": "^0.174.0",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.3",
+    "vite-plugin-glsl": "^1.3.1"
+  },
+  "dependencies": {
+    "@loaders.gl/gltf": "^4.3.3",
+    "@types/webxr": "^0.5.21",
+    "dat.gui": "^0.7.9",
+    "gl-matrix": "^3.4.3"
+  }
+}
