@@ -7,7 +7,7 @@ in vec2 texCoord;
 uniform sampler2D depthTexture;
 uniform mat4 depthUVTransform; // UV transform matrix in normalized view space
 uniform float depthScale; // Depth scale factor (unspecified unit to meters)
-uniform vec2 resolution; // Resolution of the depth texture
+uniform vec2 resolution; // Resolution of the screen
 
 const highp float kMaxDepth = 3.5; // Max depth in meters
 
