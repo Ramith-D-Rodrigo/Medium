@@ -16,6 +16,8 @@ const options : XRSessionInit = {
     }
 }
 
+let viewerRefSpace : XRReferenceSpace;
+let localRefSpace : XRReferenceSpace;
 let unboundedRefSpace: XRReferenceSpace;
 
 async function main() {
