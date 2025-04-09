@@ -9,7 +9,7 @@ uniform mat4 depthUVTransform; // UV transform matrix in normalized view space
 uniform float depthScale; // Depth scale factor (unspecified unit to meters)
 uniform vec2 resolution; // Resolution of the depth texture
 
-const highp float kMaxDepth = 8.0; // Max depth in meters
+const highp float kMaxDepth = 3.5; // Max depth in meters
 
 out vec4 color;
 
@@ -24,7 +24,7 @@ vec2 normalizeFragCoords(in vec2 fragCoords) {
     //fragCoords's left lower corner is (0.5, 0.5)
     //normalized one should have (0,0) on top left corner and (1,1) on bottom right corner
     //resolution's x and y are the width and height of the screen respectively
-    return vec2(fragCoords.x / resolution.x, 1.0 - fragCoords.y / resolution.y);
+    return vec2((fragCoords.x - 0.5) / resolution.x, 1.0 - (fragCoords.y - 0.5) / resolution.y);
 }
 
 // Maps a value from one range to another
