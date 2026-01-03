@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WebAR Depth Occlusion</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script type="module" src="src/index.ts"></script>
+    <style>
+      /* Add CSS to ensure the canvas occupies the full viewport */
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden; /* Prevent scrolling */
+      }
+
+      .btn-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .btn {
+        background-color: blue;
+        color: white;
+        font-size: larger;
+      }
+    </style>
+  </head>
+
+  <body class="btn-container">
+    <button id="btn" class="btn">Start AR</button>
+  </body>
+</html>
