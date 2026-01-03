@@ -7,17 +7,25 @@ import {
   GLSceneObject,
   Shader,
 } from "./webgl-framework";
+import vertexShader from "./simpleShader.vert.glsl";
+import fragmentShader from "./simpleShader.frag.glsl";
 
 // Global Variables
 let gl: WebGL2RenderingContext;
 let renderer: GLRenderer;
 let model: GLModel;
+let depthTexture: WebGLTexture;
+let customShader: Shader;
 
 let reticleSceneObj: GLSceneObject; // keep the reference to change the transform
 let arHitTestSource: XRHitTestSource | undefined;
 
 const options: XRSessionInit = {
-  requiredFeatures: ["unbounded", "hit-test"], // also request hit-test feature
+  requiredFeatures: ["unbounded", "hit-test", "depth-sensing"], // request depth sensing
+  depthSensing: {
+    usagePreference: ["cpu-optimized"],
+    dataFormatPreference: ["luminance-alpha"],
+  },
 };
 
 let viewerRefSpace: XRReferenceSpace;
@@ -72,6 +80,18 @@ async function setupRenderer() {
 
   // We need the GL context to pass that to XR
   gl = renderer.getGL();
+
+  // Initialize depth texture
+  depthTexture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.bindTexture(gl.TEXTURE_2D, null);
+
+  // Create a custom shader
+  customShader = Shader.getInstance(gl);
+  customShader.createFromString(vertexShader, fragmentShader);
 }
 
 /**
@@ -164,7 +184,7 @@ function onDrawFrame(t: DOMHighResTimeStamp, frame: XRFrame) {
         arHitTestSource as XRHitTestSource
       );
       if (hitResults.length > 0) {
-        let hitResultPose = hitResults[0].getPose(unboundedRefSpace);
+        let hitResultPose = hitResults[0]?.getPose(unboundedRefSpace);
         if (hitResultPose) {
           let posX = hitResultPose.transform.position.x;
           let posY = hitResultPose.transform.position.y;
@@ -196,24 +216,59 @@ function onDrawFrame(t: DOMHighResTimeStamp, frame: XRFrame) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     const scene = renderer.getScene() as GLScene; // Contains the virtual objects
-    const shader = renderer.getShader() as Shader;
 
-    shader.useShader(); // Use the shader program
+    customShader.useShader(); // Use the custom shader program
 
     for (let i = 0; i < views.length; i++) {
+      const view = views[i];
+      if(!view) continue;
       // As this is AR, only one view
-      const viewport = glLayer.getViewport(views[i]) as XRViewport;
+      const viewport = glLayer.getViewport(view) as XRViewport;
       renderer.setViewPort(
         viewport.x,
         viewport.y,
         viewport.width,
         viewport.height
       ); // Set the frambuffer viewport. This matches the camera display
+
+      const depthInfo = frame.getDepthInformation(view);
+      if (depthInfo) {
+        gl.activeTexture(gl.TEXTURE1); //texture 1 because scene object textures are added to 0
+        gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          0,
+          gl.LUMINANCE_ALPHA,
+          depthInfo.width,
+          depthInfo.height,
+          0,
+          gl.LUMINANCE_ALPHA,
+          gl.UNSIGNED_BYTE,
+          new Uint8Array(depthInfo.data, 0, depthInfo.data.byteLength)
+        );
+
+        gl.uniform1i(customShader.getUniformDepthTexture(), 1); //texture 1 because scene object textures are added to 0
+        // Set up UV transform
+        const uvTransformLocation = customShader.getUniformDepthUVTransform();
+        const matrix = depthInfo.normDepthBufferFromNormView.matrix;
+        // Bind the uv transform matrix
+        gl.uniformMatrix4fv(uvTransformLocation, false, matrix);
+        // Set the depth scale
+        const depthScaleLocation = customShader.getUniformDepthScale();
+        gl.uniform1f(depthScaleLocation, depthInfo.rawValueToMeters);
+        // Set the resolution
+        gl.uniform2f(
+          customShader.getUniformResolution(),
+          viewport.width,
+          viewport.height
+        );
+      }
+
       const uniforms = renderer.getUniforms();
       renderer.useLights(scene, uniforms);
 
-      const projectionMatrix = views[i].projectionMatrix;
-      const viewMatrix = views[i].transform.inverse.matrix; // Inverse because view camera / the user should be at the origin
+      const projectionMatrix = view.projectionMatrix;
+      const viewMatrix = view.transform.inverse.matrix; // Inverse because view camera / the user should be at the origin
 
       gl.uniformMatrix4fv(uniforms.uniformProjection, false, projectionMatrix);
       gl.uniformMatrix4fv(uniforms.uniformView, false, viewMatrix);
